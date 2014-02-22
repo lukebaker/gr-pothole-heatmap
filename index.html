@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Grand Rapids Pothole Heatmap</title>
+
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+<script src='https://api.tiles.mapbox.com/mapbox.js/v1.6.1/mapbox.js'></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v1.6.1/mapbox.css' rel='stylesheet' />
+
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+  .start { position: absolute; bottom: 20px; left: 20px; }
+  .date {
+    position: absolute;
+    bottom: 40px;
+    left: 20px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 30px;
+    background-color: rgba(255,255,255, 0.76);
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+
+
+<script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-heat/v0.1.0/leaflet-heat.js'></script>
+<script src='//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js'></script>
+<div id='map'></div>
+<button class="start">Start</button>
+<div class="date"></div>
+
+<!-- Example data. -->
+<script src="/potholes-2013-11_2014-02-24.js"></script>
+
+<script>
+    var map = L.mapbox.map('map', 'lukebaker.h6hd500k').setView([42.966, -85.674], 14),
+        heat = false;
+    pothole_data = pothole_data.reverse();
+
+    
+    $(function() {
+        $('.start').on('click', function (ev) {
+            if (heat) {
+              map.removeLayer(heat);
+            }
+            heat = L.heatLayer([], {maxZoom: 14, max: 1.3, radius: 20}).addTo(map);
+            addNewPoint(pothole_data, 0);
+        });
+    });
+
+    function addNewPoint(pothole_data, index) {
+      heat.addLatLng([pothole_data[index].lat, pothole_data[index].long]);
+      if (pothole_data.length > index + 1) {
+        var curDate = new Date(pothole_data[index].requested_datetime),
+            nextDate = new Date(pothole_data[index+1].requested_datetime),
+            diffSeconds = (nextDate - curDate) / 1000,
+            speedIncrease = 1000,
+            sleep = diffSeconds / speedIncrease;
+        //console.log(curDate, nextDate, sleep);
+        $('.date').text(curDate.toDateString().replace(/^... /, ''));
+        if (sleep > 1) {
+            setTimeout(function() {
+                addNewPoint(pothole_data, index+1);
+            }, sleep);
+        }
+        else {
+            addNewPoint(pothole_data, index+1);
+        }
+      }
+    }
+</script>
+
+
+</body>
+</html>
